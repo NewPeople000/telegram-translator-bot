@@ -1,0 +1,2 @@
+# Python runtime specification for deployment
+python-3.11.9

@@ -1,0 +1,4 @@
+python-telegram-bot==21.5
+deep-translator==1.11.4
+aiosqlite==0.20.0
+python-dotenv==1.0.1
