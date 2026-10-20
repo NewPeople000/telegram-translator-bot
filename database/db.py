@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS vocabulary (
 CREATE TABLE IF NOT EXISTS quiz_history (
     id             INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id        INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
-    vocab_id       INTEGER NOT NULL REFERENCES vocabulary(id) ON DELETE CASCADE,
+    vocab_id       INTEGER REFERENCES vocabulary(id) ON DELETE SET NULL,
     answered_at    TEXT    NOT NULL,
     is_correct     INTEGER NOT NULL   -- 0 / 1
 );
@@ -79,9 +79,30 @@ async def _conn():
 # Initialisation
 # ──────────────────────────────────────────────────────────────────────────────
 async def init_db() -> None:
-    """Create tables (idempotent)."""
+    """Create tables (idempotent) and migrate schema if needed."""
     async with _conn() as db:
         await db.executescript(_SCHEMA)
+        # Check if quiz_history.vocab_id has NOT NULL constraint and alter if necessary
+        async with db.execute("PRAGMA table_info(quiz_history)") as cur:
+            columns = await cur.fetchall()
+            vocab_col = next((c for c in columns if c[1] == "vocab_id"), None)
+            # If vocab_id is NOT NULL (c[3] == 1), migrate table
+            if vocab_col and vocab_col[3] == 1:
+                logger.info("Migrating quiz_history table to allow NULL vocab_id...")
+                await db.executescript("""
+                    CREATE TABLE IF NOT EXISTS quiz_history_new (
+                        id             INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id        INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+                        vocab_id       INTEGER REFERENCES vocabulary(id) ON DELETE SET NULL,
+                        answered_at    TEXT    NOT NULL,
+                        is_correct     INTEGER NOT NULL
+                    );
+                    INSERT INTO quiz_history_new (id, user_id, vocab_id, answered_at, is_correct)
+                    SELECT id, user_id, vocab_id, answered_at, is_correct FROM quiz_history;
+                    DROP TABLE quiz_history;
+                    ALTER TABLE quiz_history_new RENAME TO quiz_history;
+                    CREATE INDEX IF NOT EXISTS idx_quiz_user ON quiz_history(user_id);
+                """)
         await db.commit()
     logger.info("Database initialised at %s", DATABASE_PATH)
 
@@ -202,7 +223,7 @@ async def get_quiz_words(user_id: int, batch: int = 5) -> List[aiosqlite.Row]:
 
 
 async def record_quiz_result(
-    user_id: int, vocab_id: int, is_correct: bool
+    user_id: int, is_correct: bool, vocab_id: Optional[int] = None
 ) -> None:
     now = datetime.utcnow().isoformat()
     async with _conn() as db:
@@ -210,16 +231,17 @@ async def record_quiz_result(
             "INSERT INTO quiz_history (user_id, vocab_id, answered_at, is_correct) VALUES (?, ?, ?, ?)",
             (user_id, vocab_id, now, int(is_correct)),
         )
-        if is_correct:
-            await db.execute(
-                "UPDATE vocabulary SET review_count = review_count + 1, correct_count = correct_count + 1 WHERE id = ?",
-                (vocab_id,),
-            )
-        else:
-            await db.execute(
-                "UPDATE vocabulary SET review_count = review_count + 1 WHERE id = ?",
-                (vocab_id,),
-            )
+        if vocab_id is not None:
+            if is_correct:
+                await db.execute(
+                    "UPDATE vocabulary SET review_count = review_count + 1, correct_count = correct_count + 1 WHERE id = ?",
+                    (vocab_id,),
+                )
+            else:
+                await db.execute(
+                    "UPDATE vocabulary SET review_count = review_count + 1 WHERE id = ?",
+                    (vocab_id,),
+                )
         await db.commit()
 
 

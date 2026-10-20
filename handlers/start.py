@@ -24,7 +24,7 @@ Men sizga **25+ tilda** tarjima qilishga va so'zlarni yodlashga yordam beraman.
 ━━━━━━━━━━━━━━━━━━━━━━━
 🌐 *Tarjima* — matn yuboring, darhol tarjima olasiz
 📚 *Lug'at* — so'zlarni saqlang va qayta ko'ring
-🎯 *Quiz* — yodlagan so'zlaringizni test qiling
+🎯 *Quiz* — turli tillardagi so'zlar bo'yicha test topshiring
 ⚙️ *Sozlamalar* — manba/maqsad tilni o'zgartiring
 📊 *Statistika* — o'z natijalaringizni kuzating
 ━━━━━━━━━━━━━━━━━━━━━━━
@@ -42,7 +42,7 @@ Istalgan matnni to'g'ridan-to'g'ri yuboring — bot avtomatik aniqlaydi va tarji
 Tarjimadan so'ng "💾 Lug'atga saqlash" tugmasini bosing.
 
 *Quiz:*
-Saqlangan so'zlar bo'yicha test ishlang. Har bir to'g'ri javob statistikangizga qo'shiladi.
+Turli tillar (Ingliz, Rus, Turk, Nemis va h.k.) yoki shaxsiy lug'atingiz bo'yicha test topshiring. Har bir to'g'ri javob statistikangizga qo'shiladi.
 
 *Sozlamalar:*
 Manba va maqsad tilni o'zgartiring. "auto" — tilni avtomatik aniqlaydi.

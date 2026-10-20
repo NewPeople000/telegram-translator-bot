@@ -119,15 +119,51 @@ def vocab_list_kb(
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Quiz keyboard
+# Quiz keyboards
 # ──────────────────────────────────────────────────────────────────────────────
-def quiz_options_kb(options: List[str], vocab_id: int) -> InlineKeyboardMarkup:
+def quiz_languages_kb(has_user_vocab: bool = False) -> InlineKeyboardMarkup:
+    """Inline keyboard for choosing a language for the quiz."""
+    from data.quiz_words import QUIZ_LANGUAGES
+
+    rows: List[List[InlineKeyboardButton]] = []
+    row: List[InlineKeyboardButton] = []
+
+    for code, info in QUIZ_LANGUAGES.items():
+        label = f"{info['flag']} {info['name']}"
+        row.append(InlineKeyboardButton(label, callback_data=f"quiz_lang:{code}"))
+        if len(row) == 2:
+            rows.append(row)
+            row = []
+    if row:
+        rows.append(row)
+
+    if has_user_vocab:
+        rows.append([InlineKeyboardButton("📚 Shaxsiy lug'atimdan test", callback_data="quiz_lang:my_vocab")])
+
+    rows.append([InlineKeyboardButton("🔙 Bosh menyu", callback_data="back:main")])
+    return InlineKeyboardMarkup(rows)
+
+
+def quiz_options_kb(options: List[str]) -> InlineKeyboardMarkup:
+    """Multiple choice options for a quiz question."""
     rows = [
-        [InlineKeyboardButton(opt, callback_data=f"quiz_ans:{vocab_id}:{i}")]
+        [InlineKeyboardButton(f"{chr(65 + i)})  {opt}", callback_data=f"quiz_ans:{i}")]
         for i, opt in enumerate(options)
     ]
-    rows.append([InlineKeyboardButton("⏭ O'tkazib yuborish", callback_data=f"quiz_skip:{vocab_id}")])
+    rows.append([
+        InlineKeyboardButton("⏭ O'tkazish", callback_data="quiz_skip"),
+        InlineKeyboardButton("🛑 To'xtatish", callback_data="quiz_stop"),
+    ])
     return InlineKeyboardMarkup(rows)
+
+
+def quiz_finished_kb(lang_code: str) -> InlineKeyboardMarkup:
+    """Post-quiz action buttons."""
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Yana test topshirish", callback_data=f"quiz_retry:{lang_code}")],
+        [InlineKeyboardButton("🌐 Boshqa tilni tanlash", callback_data="quiz_change_lang")],
+        [InlineKeyboardButton("🏠 Bosh menyu", callback_data="back:main")],
+    ])
 
 
 # ──────────────────────────────────────────────────────────────────────────────

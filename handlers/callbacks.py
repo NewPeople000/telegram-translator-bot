@@ -15,7 +15,13 @@ from handlers.vocabulary import (
     confirm_del_callback,
     save_word_callback,
 )
-from handlers.quiz import quiz_answer_callback, quiz_skip_callback
+from handlers.quiz import (
+    quiz_answer_callback,
+    quiz_skip_callback,
+    quiz_lang_callback,
+    quiz_stop_callback,
+    quiz_choose_lang_callback,
+)
 from handlers.settings import (
     set_source_callback,
     set_target_callback,
@@ -46,11 +52,20 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         await save_word_callback(update, context)
 
     # ── Quiz ──────────────────────────────────────────────────────────────────
+    elif data.startswith("quiz_lang:") or data.startswith("quiz_retry:"):
+        await quiz_lang_callback(update, context)
+
     elif data.startswith("quiz_ans:"):
         await quiz_answer_callback(update, context)
 
-    elif data.startswith("quiz_skip:"):
+    elif data == "quiz_skip":
         await quiz_skip_callback(update, context)
+
+    elif data == "quiz_stop":
+        await quiz_stop_callback(update, context)
+
+    elif data == "quiz_change_lang":
+        await quiz_choose_lang_callback(update, context)
 
     # ── Settings ──────────────────────────────────────────────────────────────
     elif data == "set_source":
