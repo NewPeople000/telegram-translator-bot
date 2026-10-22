@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  translator-bot:
+    build: .
+    container_name: telegram_translator_bot
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - bot_data:/app/data_storage
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  bot_data:
