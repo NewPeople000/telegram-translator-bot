@@ -1,0 +1,16 @@
+services:
+  - type: worker
+    name: telegram-translator-bot
+    runtime: python
+    region: frankfurt
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python bot.py
+    autoDeploy: true
+    envVars:
+      - key: BOT_TOKEN
+        value: 8788045666:AAFJJhQVYWN9H5wQh3oV-SxRanILhgP8hUo
+      - key: DATABASE_PATH
+        value: translator_bot.db
+      - key: LOG_LEVEL
+        value: INFO
