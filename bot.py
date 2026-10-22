@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import io
 import logging
+import os
 import sys
 
 # Ensure UTF-8 output across Windows and Linux
