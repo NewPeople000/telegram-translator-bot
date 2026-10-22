@@ -12,10 +12,14 @@ import io
 import logging
 import sys
 
-# Fix Windows terminal UTF-8 encoding (emoji support)
-if sys.platform == "win32":
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
-    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
+# Ensure UTF-8 output across Windows and Linux
+try:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
 
 # Load .env file BEFORE importing config (so os.getenv picks up the token)
 from dotenv import load_dotenv
@@ -44,13 +48,16 @@ from handlers.menu import menu_router
 # ──────────────────────────────────────────────────────────────────────────────
 # Logging setup
 # ──────────────────────────────────────────────────────────────────────────────
+handlers_list = [logging.StreamHandler(sys.stdout)]
+try:
+    handlers_list.append(logging.FileHandler(LOG_FILE, encoding="utf-8"))
+except Exception:
+    pass
+
 logging.basicConfig(
     level=getattr(logging, LOG_LEVEL, logging.INFO),
     format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
-    handlers=[
-        logging.StreamHandler(sys.stdout),
-        logging.FileHandler(LOG_FILE, encoding="utf-8"),
-    ],
+    handlers=handlers_list,
 )
 logger = logging.getLogger(__name__)
 
@@ -158,12 +165,16 @@ def main() -> None:
     )
 
     logger.info("TranslateBot Pro ishga tushdi! Ctrl+C bilan to'xtatish mumkin.")
-    # Python 3.14 fix: explicitly create and set an event loop
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+    if sys.version_info >= (3, 14):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
     # PTB manages its own event loop — do NOT wrap in asyncio.run()
     app.run_polling(drop_pending_updates=True)
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        logger.exception("Jiddiy xatolik yuz berdi: %s", e)
+        sys.exit(1)
