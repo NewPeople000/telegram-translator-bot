@@ -70,6 +70,36 @@ BOT_COMMANDS = [
 
 
 # ──────────────────────────────────────────────────────────────────────────────
+# Optional Health Server for cloud platforms (Render, Koyeb, etc.)
+# ──────────────────────────────────────────────────────────────────────────────
+def _start_health_server() -> None:
+    port_env = os.getenv("PORT")
+    if not port_env:
+        return
+    try:
+        from http.server import HTTPServer, BaseHTTPRequestHandler
+        import threading
+
+        class HealthHandler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                self.send_response(200)
+                self.send_header("Content-type", "text/plain; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(b"TranslateBot Pro is healthy and active!")
+
+            def log_message(self, format, *args):
+                return
+
+        port = int(port_env)
+        server = HTTPServer(("0.0.0.0", port), HealthHandler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        logger.info("Health server %d-portda ishga tushirildi.", port)
+    except Exception as exc:
+        logger.warning("Health serverni ishga tushirishda xatolik: %s", exc)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
 # Main
 # ──────────────────────────────────────────────────────────────────────────────
 async def _setup(app: Application) -> None:
@@ -80,6 +110,7 @@ async def _setup(app: Application) -> None:
 
 
 def main() -> None:
+    _start_health_server()
     if BOT_TOKEN == "YOUR_BOT_TOKEN_HERE":
         logger.error(
             "Bot token topilmadi!\n"
